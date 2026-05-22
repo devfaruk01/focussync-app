@@ -1,0 +1,44 @@
+# Node.js
+node_modules/
+
+# Build folders
+dist/
+build/
+release/
+
+# Environment variables
+.env
+.env.local
+
+# Firebase
+.firebase/
+
+# Flutter/Dart
+.dart_tool/
+.flutter-plugins
+.flutter-plugins-dependencies
+.packages
+
+# Logs
+*.log
+
+# Coverage
+coverage/
+
+# OS generated files
+.DS_Store
+Thumbs.db
+
+# VS Code local settings
+.vscode/settings.json
+
+# Android/Flutter build cache
+android/.gradle/
+android/app/build/
+
+# Electron cache
+out/
+
+# Temporary files
+tmp/
+temp/
