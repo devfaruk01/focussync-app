@@ -1,0 +1,14 @@
+{
+  "name": "focussync-desktop",
+  "version": "1.0.0",
+  "main": "main.js",
+  "description": "FocusSync Desktop App",
+  "author": "Omor Faruk",
+  "license": "MIT",
+  "scripts": {
+    "start": "env -u GSETTINGS_SCHEMA_DIR -u ELECTRON_RUN_AS_NODE XDG_DATA_HOME=$HOME/.local/share XDG_DATA_DIRS=/usr/local/share:/usr/share:/var/lib/snapd/desktop electron ."
+  },
+  "devDependencies": {
+    "electron": "^39.8.5"
+  }
+}
