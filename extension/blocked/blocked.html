@@ -1,0 +1,208 @@
+<!-- extension/blocked/blocked.html -->
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Focus Mode Active - FocusSync</title>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      min-height: 100vh;
+      background: linear-gradient(135deg, #0F172A 0%, #1E1B4B 50%, #2E1065 100%);
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', sans-serif;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 20px;
+      position: relative;
+      overflow: hidden;
+    }
+
+    body::before {
+      content: '';
+      position: absolute;
+      width: 200%;
+      height: 200%;
+      background: radial-gradient(circle at 20% 50%, rgba(139, 92, 246, 0.3), transparent 50%);
+      animation: rotate 20s linear infinite;
+    }
+
+    @keyframes rotate {
+      from { transform: rotate(0deg); }
+      to { transform: rotate(360deg); }
+    }
+
+    .blocked-container {
+      position: relative;
+      z-index: 1;
+      max-width: 600px;
+      width: 100%;
+      animation: slideUp 0.5s ease-out;
+    }
+
+    @keyframes slideUp {
+      from {
+        opacity: 0;
+        transform: translateY(30px);
+      }
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+
+    .glass-card {
+      background: rgba(15, 23, 42, 0.8);
+      backdrop-filter: blur(20px);
+      border-radius: 32px;
+      padding: 48px 32px;
+      text-align: center;
+      border: 1px solid rgba(139, 92, 246, 0.4);
+      box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
+    }
+
+    .warning-icon {
+      font-size: 80px;
+      margin-bottom: 24px;
+      animation: bounce 2s infinite;
+    }
+
+    @keyframes bounce {
+      0%, 100% { transform: translateY(0); }
+      50% { transform: translateY(-10px); }
+    }
+
+    h1 {
+      font-size: 28px;
+      font-weight: 700;
+      background: linear-gradient(135deg, #A78BFA, #60A5FA);
+      -webkit-background-clip: text;
+      background-clip: text;
+      color: transparent;
+      margin-bottom: 16px;
+    }
+
+    .message {
+      color: #CBD5E1;
+      font-size: 16px;
+      line-height: 1.6;
+      margin-bottom: 32px;
+    }
+
+    .timer-section {
+      background: rgba(139, 92, 246, 0.15);
+      border-radius: 20px;
+      padding: 24px;
+      margin-bottom: 32px;
+      border: 1px solid rgba(139, 92, 246, 0.3);
+    }
+
+    .timer-label {
+      font-size: 14px;
+      color: #94A3B8;
+      margin-bottom: 12px;
+      letter-spacing: 1px;
+    }
+
+    .timer {
+      font-size: 56px;
+      font-weight: 800;
+      font-family: monospace;
+      background: linear-gradient(135deg, #A78BFA, #60A5FA);
+      -webkit-background-clip: text;
+      background-clip: text;
+      color: transparent;
+      margin-bottom: 8px;
+    }
+
+    .timer-unit {
+      font-size: 16px;
+      color: #64748B;
+    }
+
+    .quote-section {
+      margin-bottom: 32px;
+      padding: 20px;
+      background: rgba(255, 255, 255, 0.03);
+      border-radius: 16px;
+    }
+
+    .quote-text {
+      font-size: 18px;
+      font-style: italic;
+      color: #E2E8F0;
+      line-height: 1.5;
+      margin-bottom: 12px;
+      transition: opacity 0.3s ease;
+    }
+
+    .quote-author {
+      font-size: 12px;
+      color: #64748B;
+    }
+
+    .unlock-btn {
+      background: linear-gradient(135deg, #EF4444, #DC2626);
+      border: none;
+      padding: 14px 28px;
+      border-radius: 40px;
+      color: white;
+      font-weight: 600;
+      font-size: 14px;
+      cursor: pointer;
+      transition: all 0.3s ease;
+      box-shadow: 0 4px 15px rgba(239, 68, 68, 0.3);
+      margin-top: 16px;
+    }
+
+    .unlock-btn:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 6px 20px rgba(239, 68, 68, 0.4);
+    }
+
+    .emergency-note {
+      font-size: 11px;
+      color: #475569;
+      margin-top: 20px;
+    }
+  </style>
+</head>
+<body>
+  <div class="blocked-container">
+    <div class="glass-card">
+      <div class="warning-icon">🚫</div>
+      <h1>Focus Mode Active</h1>
+      <div class="message">
+        This website has been blocked to help you stay focused on your priorities.
+      </div>
+      
+      <div class="timer-section">
+        <div class="timer-label">REMAINING FOCUS TIME</div>
+        <div class="timer">
+          <span id="timerMinutes">00</span>:<span id="timerSeconds">00</span>
+        </div>
+        <div class="timer-unit">until focus session ends</div>
+      </div>
+
+      <div class="quote-section" id="quoteSection">
+        <div class="quote-text" id="quoteText">"The secret of getting ahead is getting started."</div>
+        <div class="quote-author" id="quoteAuthor">- Mark Twain</div>
+      </div>
+
+      <button class="unlock-btn" id="emergencyUnlockBtn">
+        🔓 Emergency Unlock
+      </button>
+      <div class="emergency-note">
+        Emergency unlock will log this action and require confirmation
+      </div>
+    </div>
+  </div>
+  <script src="blocked.js"></script>
+</body>
+</html>
