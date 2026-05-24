@@ -166,6 +166,15 @@
       box-shadow: 0 6px 20px rgba(239, 68, 68, 0.4);
     }
 
+    .unlock-btn:disabled {
+      background: linear-gradient(135deg, #334155, #1E293B);
+      color: #CBD5E1;
+      cursor: not-allowed;
+      transform: none;
+      box-shadow: none;
+      opacity: 0.9;
+    }
+
     .emergency-note {
       font-size: 11px;
       color: #475569;
@@ -195,11 +204,11 @@
         <div class="quote-author" id="quoteAuthor">- Mark Twain</div>
       </div>
 
-      <button class="unlock-btn" id="emergencyUnlockBtn">
-        🔓 Emergency Unlock
+      <button class="unlock-btn" id="emergencyUnlockBtn" disabled>
+        🔒 Focus Lock Enabled
       </button>
       <div class="emergency-note">
-        Emergency unlock will log this action and require confirmation
+        Focus mode is locked. It cannot be turned off from extension pages.
       </div>
     </div>
   </div>

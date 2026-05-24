@@ -127,34 +127,8 @@ const checkFocusModeStatus = async () => {
   });
 };
 
-const requestEmergencyUnlock = async () => {
-  const confirmed = confirm(
-    '⚠️ EMERGENCY UNLOCK WARNING ⚠️\n\n' +
-    'This action will:\n' +
-    '• Temporarily disable focus mode\n' +
-    '• Be logged for productivity tracking\n' +
-    '• Require re-enabling focus mode manually\n\n' +
-    'Are you sure you want to proceed?'
-  );
-  
-  if (!confirmed) return;
-  
-  try {
-    const response = await new Promise((resolve) => {
-      chrome.runtime.sendMessage({ type: 'SET_FOCUS_MODE', enabled: false, domains: [] }, resolve);
-    });
-    
-    if (!response || response.error) {
-      alert('Failed to unlock. Please try again.');
-    } else {
-      await chrome.storage.local.remove(['focusSessionEndTime']);
-      window.location.href = 'about:blank';
-      window.close();
-    }
-  } catch (error) {
-    console.error('Emergency unlock error:', error);
-    alert('Error during unlock. Please try again.');
-  }
+const requestEmergencyUnlock = () => {
+  alert('Focus mode is locked and cannot be turned off from extension.');
 };
 
 const logBlockedVisit = async () => {
@@ -182,6 +156,7 @@ const init = async () => {
   startQuoteRotation();
   
   if (DOM.emergencyBtn) {
+    DOM.emergencyBtn.disabled = true;
     DOM.emergencyBtn.addEventListener('click', requestEmergencyUnlock);
   }
   

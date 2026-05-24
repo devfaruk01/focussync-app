@@ -14,12 +14,15 @@ let activityQueue = [];
 let syncInterval = null;
 let desktopWS = null;
 let reconnectAttempts = 0;
+let focusModeLocked = false;
 
 const SYNC_INTERVAL_MS = 30000;
 const ACTIVITY_BATCH_SIZE = 50;
 const MAX_RECONNECT_ATTEMPTS = 5;
 const IDLE_THRESHOLD_SECONDS = 60;
 const DEFAULT_FOCUS_DURATION_MINUTES = 25;
+const FOCUS_MODE_HARD_LOCK = true;
+const LOCKED_ERROR_MESSAGE = 'Focus mode is locked and cannot be turned off.';
 const DEFAULT_BLOCKED_DOMAINS = [
   'facebook.com',
   'youtube.com',
@@ -219,6 +222,14 @@ const checkIdleState = async () => {
 // ============================================
 
 const updateFocusMode = async (enabled, domains = [], durationMinutes = DEFAULT_FOCUS_DURATION_MINUTES) => {
+  if (!enabled && isFocusMode && FOCUS_MODE_HARD_LOCK && focusModeLocked) {
+    return {
+      success: false,
+      code: 'FOCUS_MODE_LOCKED',
+      error: LOCKED_ERROR_MESSAGE
+    };
+  }
+
   const normalizedRequestedDomains = normalizeDomainList(domains);
   const effectiveDomains = normalizedRequestedDomains.length > 0
     ? normalizedRequestedDomains
@@ -226,6 +237,7 @@ const updateFocusMode = async (enabled, domains = [], durationMinutes = DEFAULT_
 
   isFocusMode = enabled;
   blockedDomains = effectiveDomains;
+  focusModeLocked = enabled ? true : focusModeLocked;
 
   const numericDuration = Number(durationMinutes);
   const safeDurationMinutes = Number.isFinite(numericDuration) && numericDuration > 0
@@ -238,7 +250,8 @@ const updateFocusMode = async (enabled, domains = [], durationMinutes = DEFAULT_
   await chrome.storage.local.set({
     focusModeEnabled: enabled,
     blockedDomains: blockedDomains,
-    focusSessionEndTime
+    focusSessionEndTime,
+    focusModeLocked
   });
   
   // If enabling focus mode, check current tab
@@ -251,7 +264,7 @@ const updateFocusMode = async (enabled, domains = [], durationMinutes = DEFAULT_
   
   await chrome.runtime.sendMessage({
     type: 'FOCUS_MODE_CHANGE',
-    data: { enabled, domains: blockedDomains }
+    data: { enabled, domains: blockedDomains, locked: focusModeLocked }
   }).catch(() => {});
   
   // Sync to Firebase
@@ -260,6 +273,8 @@ const updateFocusMode = async (enabled, domains = [], durationMinutes = DEFAULT_
     domains: { arrayValue: { values: blockedDomains.map(d => ({ stringValue: d })) } },
     startTime: { timestampValue: new Date().toISOString() }
   });
+
+  return { success: true, blockedDomains, focusModeLocked };
 };
 
 // ============================================
@@ -338,6 +353,7 @@ const getActivityStats = async () => {
 const messageHandlers = {
   'GET_STATE': async () => ({
     focusMode: isFocusMode,
+    focusModeLocked,
     blockedDomains,
     currentDomain,
     active: !!currentDomain
@@ -345,11 +361,17 @@ const messageHandlers = {
   
   'SET_FOCUS_MODE': async (message) => {
     if (!isValidMessage(message, ['enabled'])) return { error: 'Invalid message' };
-    await updateFocusMode(message.enabled, message.domains || [], message.durationMinutes);
-    return { success: true, blockedDomains };
+    const result = await updateFocusMode(message.enabled, message.domains || [], message.durationMinutes);
+    if (!result || result.success === false) {
+      return result || { success: false, error: 'Focus mode update failed' };
+    }
+    return result;
   },
   
   'ADD_BLOCKED_DOMAIN': async (message) => {
+    if (isFocusMode && focusModeLocked) {
+      return { success: false, code: 'FOCUS_MODE_LOCKED', error: 'Cannot edit blocked domains while focus mode is locked.' };
+    }
     if (!isValidMessage(message, ['domain'])) return { error: 'Invalid message' };
     const domain = normalizeDomain(message.domain);
     if (domain && !blockedDomains.includes(domain)) {
@@ -360,6 +382,9 @@ const messageHandlers = {
   },
   
   'REMOVE_BLOCKED_DOMAIN': async (message) => {
+    if (isFocusMode && focusModeLocked) {
+      return { success: false, code: 'FOCUS_MODE_LOCKED', error: 'Cannot edit blocked domains while focus mode is locked.' };
+    }
     if (!isValidMessage(message, ['domain'])) return { error: 'Invalid message' };
     const domain = normalizeDomain(message.domain);
     blockedDomains = blockedDomains.filter((d) => d !== domain);
@@ -435,12 +460,22 @@ chrome.alarms.onAlarm.addListener(async (alarm) => {
 const loadSettings = async () => {
   const data = await chrome.storage.local.get([
     'focusModeEnabled', 
+    'focusModeLocked',
     'blockedDomains',
     'firebaseConfig',
     'userId'
   ]);
   
   isFocusMode = data.focusModeEnabled || false;
+  focusModeLocked = FOCUS_MODE_HARD_LOCK
+    ? (data.focusModeLocked || isFocusMode)
+    : !!data.focusModeLocked;
+  if (focusModeLocked) {
+    isFocusMode = true;
+    if (!data.focusModeEnabled) {
+      await chrome.storage.local.set({ focusModeEnabled: true });
+    }
+  }
   blockedDomains = normalizeDomainList(data.blockedDomains || []);
   if (blockedDomains.length === 0) {
     blockedDomains = [...DEFAULT_BLOCKED_DOMAINS];

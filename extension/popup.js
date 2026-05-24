@@ -1,6 +1,7 @@
 // extension/popup/popup.js
 let currentState = {
   focusMode: false,
+  focusModeLocked: false,
   blockedDomains: [],
   currentDomain: null,
   stats: { today: [], totalBlocked: 0, focusMode: false }
@@ -22,8 +23,11 @@ const DOM = {
   focusTimeValue: document.getElementById('focusTimeValue'),
   blockedCountValue: document.getElementById('blockedCountValue'),
   blockedDomainsValue: document.getElementById('blockedDomainsValue'),
-  progressFill: document.querySelector('.progress-ring-fill')
+  progressFill: document.querySelector('.progress-ring-fill'),
+  lockNote: document.getElementById('lockNote')
 };
+
+const LOCKED_TEXT = 'Focus mode lock is active. You cannot turn it off right now.';
 
 const setSyncStatus = (status, message = '') => {
   if (!DOM.syncStatus) return;
@@ -69,12 +73,17 @@ const loadState = async () => {
 };
 
 const updateUI = () => {
+  const isLockedNow = !!currentState.focusMode && !!currentState.focusModeLocked;
+
   if (currentState.focusMode) {
     DOM.focusStatusText.textContent = 'Focus Mode Active';
     DOM.focusStatusIcon.innerHTML = '🎯';
     if (DOM.progressFill) DOM.progressFill.style.strokeDashoffset = '0';
     if (DOM.startBtn) DOM.startBtn.disabled = true;
-    if (DOM.stopBtn) DOM.stopBtn.disabled = false;
+    if (DOM.stopBtn) {
+      DOM.stopBtn.disabled = isLockedNow;
+      DOM.stopBtn.title = isLockedNow ? LOCKED_TEXT : '';
+    }
   } else {
     DOM.focusStatusText.textContent = 'Focus Mode Off';
     DOM.focusStatusIcon.innerHTML = '⚡';
@@ -90,6 +99,18 @@ const updateUI = () => {
   if (DOM.blockedDomainsValue) {
     DOM.blockedDomainsValue.textContent = currentState.blockedDomains.length;
   }
+
+  if (DOM.addDomainBtn) {
+    DOM.addDomainBtn.disabled = isLockedNow;
+    DOM.addDomainBtn.title = isLockedNow ? 'Blocked domains cannot be edited while focus mode is locked.' : '';
+  }
+
+  if (DOM.lockNote) {
+    DOM.lockNote.textContent = isLockedNow
+      ? LOCKED_TEXT
+      : 'Focus mode can be started from here.';
+  }
+
   renderDomainList();
 };
 
@@ -104,7 +125,7 @@ const renderDomainList = () => {
   DOM.domainList.innerHTML = currentState.blockedDomains.map(domain => `
     <div class="domain-item">
       <span>${escapeHtml(domain)}</span>
-      <button class="remove-domain" data-domain="${escapeHtml(domain)}">✕</button>
+      <button class="remove-domain" data-domain="${escapeHtml(domain)}" ${currentState.focusMode && currentState.focusModeLocked ? 'disabled title="Locked during focus mode"' : ''}>✕</button>
     </div>
   `).join('');
   
@@ -150,6 +171,7 @@ const startFocusMode = async () => {
       if (Array.isArray(response.blockedDomains)) {
         currentState.blockedDomains = response.blockedDomains;
       }
+      currentState.focusModeLocked = !!response.focusModeLocked;
       currentState.focusMode = true;
       updateUI();
       setSyncStatus('synced', 'Focus Started');
@@ -165,6 +187,11 @@ const startFocusMode = async () => {
 };
 
 const stopFocusMode = async () => {
+  if (currentState.focusModeLocked) {
+    setSyncStatus('error', 'Locked');
+    return;
+  }
+
   setSyncStatus('syncing', 'Stopping...');
   try {
     const response = await sendMessage('SET_FOCUS_MODE', { enabled: false, domains: [] });
@@ -172,6 +199,7 @@ const stopFocusMode = async () => {
       if (Array.isArray(response.blockedDomains)) {
         currentState.blockedDomains = response.blockedDomains;
       }
+      currentState.focusModeLocked = !!response.focusModeLocked;
       currentState.focusMode = false;
       updateUI();
       setSyncStatus('synced', 'Focus Stopped');
@@ -187,6 +215,11 @@ const stopFocusMode = async () => {
 };
 
 const addBlockedDomain = async () => {
+  if (currentState.focusMode && currentState.focusModeLocked) {
+    setSyncStatus('error', 'Locked');
+    return;
+  }
+
   const domain = prompt('Enter domain to block (e.g., youtube.com):');
   if (!domain || !domain.trim()) return;
   
@@ -211,6 +244,11 @@ const addBlockedDomain = async () => {
 };
 
 const removeBlockedDomain = async (domain) => {
+  if (currentState.focusMode && currentState.focusModeLocked) {
+    setSyncStatus('error', 'Locked');
+    return;
+  }
+
   setSyncStatus('syncing', 'Removing...');
   try {
     const response = await sendMessage('REMOVE_BLOCKED_DOMAIN', { domain });
@@ -264,6 +302,9 @@ const init = async () => {
   chrome.runtime.onMessage.addListener((message) => {
     if (message.type === 'FOCUS_MODE_CHANGE') {
       currentState.focusMode = message.data.enabled;
+      if (typeof message.data.locked !== 'undefined') {
+        currentState.focusModeLocked = !!message.data.locked;
+      }
       updateUI();
     } else if (message.type === 'SITE_CHANGE') {
       currentState.currentDomain = message.data.domain;

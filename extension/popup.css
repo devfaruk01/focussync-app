@@ -7,7 +7,10 @@
 
 body {
   width: 380px;
-  background: linear-gradient(135deg, #0F172A 0%, #1E1B4B 100%);
+  background:
+    radial-gradient(circle at 15% 0%, rgba(59, 130, 246, 0.18), transparent 42%),
+    radial-gradient(circle at 100% 100%, rgba(139, 92, 246, 0.22), transparent 40%),
+    linear-gradient(135deg, #0F172A 0%, #1E1B4B 100%);
   font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', sans-serif;
   color: #F1F5F9;
 }
@@ -34,7 +37,7 @@ body {
   border-radius: 24px;
   padding: 20px;
   border: 1px solid rgba(139, 92, 246, 0.3);
-  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+  box-shadow: 0 12px 32px rgba(0, 0, 0, 0.35);
 }
 
 .header {
@@ -101,7 +104,8 @@ body {
   background: rgba(139, 92, 246, 0.1);
   border-radius: 20px;
   margin-bottom: 24px;
-  border: 1px solid rgba(139, 92, 246, 0.2);
+  border: 1px solid rgba(139, 92, 246, 0.24);
+  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.03);
 }
 
 .status-ring {
@@ -186,6 +190,25 @@ body {
   transform: translateY(-2px);
 }
 
+.btn-secondary:disabled,
+.icon-btn:disabled,
+.remove-domain:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+  transform: none;
+}
+
+.action-note {
+  margin: -10px 0 18px;
+  font-size: 11px;
+  color: #93C5FD;
+  text-align: center;
+  padding: 8px 10px;
+  background: rgba(59, 130, 246, 0.12);
+  border: 1px solid rgba(96, 165, 250, 0.2);
+  border-radius: 10px;
+}
+
 .stats-grid {
   display: grid;
   grid-template-columns: repeat(3, 1fr);
@@ -198,7 +221,8 @@ body {
   border-radius: 16px;
   padding: 12px;
   text-align: center;
-  transition: transform 0.2s ease;
+  transition: transform 0.2s ease, background 0.2s ease;
+  border: 1px solid rgba(255, 255, 255, 0.04);
 }
 
 .stat-card:hover {
@@ -275,6 +299,7 @@ body {
   background: rgba(255, 255, 255, 0.05);
   border-radius: 8px;
   font-size: 12px;
+  border: 1px solid rgba(255, 255, 255, 0.04);
 }
 
 .domain-item span {
