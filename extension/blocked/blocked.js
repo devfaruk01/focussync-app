@@ -45,6 +45,22 @@ const getFocusSessionEndTime = async () => {
   });
 };
 
+const getBlockedTargetDomain = () => {
+  const params = new URLSearchParams(window.location.search);
+  const blockedUrl = params.get('blockedUrl');
+
+  if (!blockedUrl) {
+    return null;
+  }
+
+  try {
+    const parsed = new URL(decodeURIComponent(blockedUrl));
+    return parsed.hostname.replace(/^www\./, '');
+  } catch {
+    return null;
+  }
+};
+
 const updateRemainingTime = async () => {
   const endTime = await getFocusSessionEndTime();
   
@@ -142,11 +158,15 @@ const requestEmergencyUnlock = async () => {
 };
 
 const logBlockedVisit = async () => {
-  const currentUrl = window.location.href;
+  const blockedDomain = getBlockedTargetDomain();
+  if (!blockedDomain) {
+    return;
+  }
+
   try {
     await chrome.runtime.sendMessage({ 
       type: 'LOG_MANUAL', 
-      domain: new URL(currentUrl).hostname,
+      domain: blockedDomain,
       duration: 0,
       isBlocked: true
     });

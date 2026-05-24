@@ -7,6 +7,7 @@ let currentState = {
 };
 
 let updateInterval = null;
+const DEFAULT_FOCUS_DURATION_MINUTES = 25;
 
 const DOM = {
   startBtn: document.getElementById('startFocusBtn'),
@@ -79,7 +80,7 @@ const updateUI = () => {
     DOM.focusStatusIcon.innerHTML = '⚡';
     if (DOM.progressFill) DOM.progressFill.style.strokeDashoffset = '219.9';
     if (DOM.startBtn) DOM.startBtn.disabled = false;
-    if (DOM.stopBtn) DOM.stopBtn.disabled = false;
+    if (DOM.stopBtn) DOM.stopBtn.disabled = true;
   }
   
   DOM.currentSiteText.textContent = currentState.currentDomain 
@@ -140,8 +141,15 @@ const updateStats = () => {
 const startFocusMode = async () => {
   setSyncStatus('syncing', 'Starting...');
   try {
-    const response = await sendMessage('SET_FOCUS_MODE', { enabled: true, domains: currentState.blockedDomains });
+    const response = await sendMessage('SET_FOCUS_MODE', {
+      enabled: true,
+      domains: currentState.blockedDomains,
+      durationMinutes: DEFAULT_FOCUS_DURATION_MINUTES
+    });
     if (!response.error) {
+      if (Array.isArray(response.blockedDomains)) {
+        currentState.blockedDomains = response.blockedDomains;
+      }
       currentState.focusMode = true;
       updateUI();
       setSyncStatus('synced', 'Focus Started');
@@ -161,6 +169,9 @@ const stopFocusMode = async () => {
   try {
     const response = await sendMessage('SET_FOCUS_MODE', { enabled: false, domains: [] });
     if (!response.error) {
+      if (Array.isArray(response.blockedDomains)) {
+        currentState.blockedDomains = response.blockedDomains;
+      }
       currentState.focusMode = false;
       updateUI();
       setSyncStatus('synced', 'Focus Stopped');
